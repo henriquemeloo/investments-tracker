@@ -1,5 +1,5 @@
 def index():
-	return "Hello Worldddd!"
+	return "Hello World!"
 
 # def users():
 # 	return "These are my users"
