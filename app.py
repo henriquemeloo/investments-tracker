@@ -6,7 +6,8 @@ from controllers import index
 
 app = Flask(__name__)
 
-client = MongoClient('mongodb://db:27017/')
+#client = MongoClient('mongodb://db:27017/')
+client = MongoClient('mongodb://localhost:27017/')
 db = client.test_database
 
 @app.route("/users", methods=['GET', 'POST'])
@@ -25,4 +26,5 @@ def hello():
     return index()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="localhost", debug=True)
+    #app.run(host="0.0.0.0", debug=True)
