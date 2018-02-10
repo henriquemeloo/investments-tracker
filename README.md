@@ -5,8 +5,8 @@ docker-compose build
 docker-compose up
 ```
 
+### Otherwise, you'll need to:
 
-Otherwise, you'll need to:
 * install MongoDB
 * change `app.py` to reference your MongoDB host and port
 * install Python 3
