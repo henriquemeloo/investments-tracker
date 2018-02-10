@@ -10,6 +10,7 @@ docker-compose up
 * install MongoDB
 * change `app.py` to reference your MongoDB host and port
 * install Python 3
+* install `pip`
 * run `pip install -r requirements.txt`
 * run `FLASK_APP=app.py flask run` to start the server (or `python -u app.py`)
 * change the lines
