@@ -21,7 +21,7 @@ class JSONEncoder(json.JSONEncoder):
 def users_route():
     if request.method == 'GET':
         users = db.users.find()
-        return JSONEncoder().encode({"status": "success", "payload": [doc for doc in users]})
+        return JSONEncoder().encode({"status": "success", "payload": [user for user in users]})
     elif request.method == 'POST':
         try:
             name = request.form["name"]
