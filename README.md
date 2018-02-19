@@ -8,7 +8,6 @@ docker-compose up
 ### Otherwise, you'll need to:
 
 * install MongoDB
-* change `app.py` to reference your MongoDB host and port
 * install Python 3
 * install `pip`
 * run `pip install -r requirements.txt`
@@ -20,3 +19,12 @@ if __name__ == "__main__":
 ```
 to simply:
 ```app.run(debug=True)```
+
+and 
+```
+client = MongoClient('mongodb://db:27017/')
+```
+to 
+```
+client = MongoClient('mongodb://localhost:27017/')
+```
