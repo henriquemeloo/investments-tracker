@@ -20,11 +20,7 @@ class JSONEncoder(json.JSONEncoder):
 @app.route("/users", methods=['GET', 'POST'])
 def users_route():
     if request.method == 'GET':
-        # users = []
-        # for user in db.users.find():
-        #     users.append(user.get("name", ""))
         users = db.users.find()
-        # return jsonify({"status": "success", "payload": [doc for doc in users]})
         return JSONEncoder().encode({"status": "success", "payload": [doc for doc in users]})
     elif request.method == 'POST':
         try:
