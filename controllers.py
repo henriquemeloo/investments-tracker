@@ -13,19 +13,8 @@ def add_months(source_date, months):
     
     return datetime.date(year, month, day)
 
-def users():
-    if request.method == 'GET':
-        users = []
-        for user in db.users.find():
-            users.append(user.get("name", ""))
-        return jsonify({"status": "success", "payload": users})
-    elif request.method == 'POST':
-        try:
-            name = request.form["name"]
-            user_id = db.users.insert_one({'name': name}).inserted_id
-            return jsonify({"status": "success", "payload": str(user_id)})
-        except Exception as e:
-            return jsonify({"status": "failed", "payload": "Favor colocar um nome"})
+#def users():
+
 
 def goals():
 	if request.method == 'GET':
