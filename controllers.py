@@ -57,7 +57,7 @@ def goals(user_id):
 			for i in range(num_months):
 				value = float(price)/num_months 
 				date = add_months(start_date, i)
-				installment_id = db.installments.insert_one({'value': value, 'paid': "False", 'date': str(date), 'investment_id': "None"}).inserted_id
+				installment_id = db.installments.insert_one({'user_id': user_id,'value': value, 'paid': "False", 'date': str(date), 'investment_id': "None"}).inserted_id
 				installments_ids.append(installment_id)
 
 			goal_id = db.goals.insert_one({'user_id': user_id, 'name': name, 'price': price, 'end_date': str(end_date), 'start_date': str(start_date), 'installments': installments_ids}).inserted_id
@@ -69,3 +69,16 @@ def goals(user_id):
 def goal(user_id, goal_id):
 	goal = db.goals.find_one({'_id': ObjectId(goal_id)})
 	return JSONEncoder().encode({"status": "success", "payload": goal})
+
+def installment(installment_id):
+	installment = db.installments.find_one({'_id': ObjectId(installment_id)})
+	return JSONEncoder().encode({"status": "success", "payload": installment})
+
+def pay_installment(installment_id):
+	paid = request.form["paid"]
+	if(paid == "True" or paid == "False"):
+		db.installments.update({'_id': ObjectId(installment_id)}, { '$set': {'paid': paid}})
+		installment = db.installments.find_one({'_id': ObjectId(installment_id)})
+		return JSONEncoder().encode({"status": "success", "payload": installment})
+	else:
+		return JSONEncoder().encode({"status": "failed", "payload": "'paid' argument must be 'True' or 'False'"})

@@ -48,6 +48,14 @@ def goals_route(user_id):
 def goal_route(user_id, goal_id):
     return goal(user_id, goal_id)
 
+@app.route("/installments/<installment_id>", methods=['GET'])
+def installment_route(installment_id):
+    return installment(installment_id)
+
+@app.route("/installments/<installment_id>/pay", methods=['POST'])
+def installment_pay_route(installment_id):
+    return pay_installment(installment_id)
+
 #---------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
