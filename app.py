@@ -38,12 +38,15 @@ def users_route():
 @app.route("/user/<user_id>", methods=['GET'])
 def user_route(user_id):
     user = db.users.find_one({'_id': ObjectId(user_id)})
-    
     return JSONEncoder().encode({"status": "success", "payload": user})
 
-@app.route("/users/goals", methods=['GET', 'POST'])
-def goals_route():
-    return goals()
+@app.route("/goals/<user_id>", methods=['GET', 'POST'])
+def goals_route(user_id):
+    return goals(user_id)
+
+@app.route("/goals/<user_id>/<goal_id>", methods=['GET'])
+def goal_route(user_id, goal_id):
+    return goal(user_id, goal_id)
 
 #---------------------------------------------------------------------------------------------
 
