@@ -88,31 +88,7 @@ def get_pending_installments(user_id):
 	return JSONEncoder().encode({"status": "success", "payload": pending_installments.drop(columns=['_id']).to_dict()})
 
 def update_goal(user_id, goal_id):
-	name = None
-	price = None
-	end_date = None
-	ammount_saved = None
-	last_paid = None
-	
-	if "name" in request.form:
-		name = request.form["name"]
-	if "price" in request.form:
-		price = request.form["price"]
-	if "end_date" in request.form:
-		end_date = request.form["end_date"]
-	if "ammount_saved" in request.form:
-		ammount_saved = request.form["ammount_saved"]
-	if "last_paid" in request.form:
-		last_paid = request.form["last_paid"]
-
-	update_value = {
-		'name' : name,
-		'price' : price,
-		'end_date' : end_date,
-		'ammount_saved' : ammount_saved,
-		'last_paid' : last_paid
-	}
-
+	update_value = {k: v for k, v in request.form.items()}
 	return post_goal_update(user_id, goal_id, update_value)
 
 def post_goal_update(user_id, goal_id, update_value):
