@@ -12,11 +12,11 @@ db = client.test_database
 
 #ROUTES---------------------------------------------------------------------------------------
 
-class JSONEncoder(json.JSONEncoder):
+""" class JSONEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, ObjectId):
             return str(o)
-        return json.JSONEncoder.default(self, o)
+        return json.JSONEncoder.default(self, o) """
 
 @app.route("/")
 def hello_route():
@@ -48,13 +48,21 @@ def goals_route(user_id):
 def goal_route(user_id, goal_id):
     return goal(user_id, goal_id)
 
-@app.route("/installments/<installment_id>", methods=['GET'])
+"""@app.route("/installments/<installment_id>", methods=['GET'])
 def installment_route(installment_id):
     return installment(installment_id)
 
 @app.route("/installments/<installment_id>/pay", methods=['POST'])
 def installment_pay_route(installment_id):
-    return pay_installment(installment_id)
+    return pay_installment(installment_id)"""
+
+@app.route("/goals/pending/<user_id>/")
+def pending_installments_route(user_id):
+    return get_pending_installments(user_id)
+
+@app.route("/goals/<user_id>/<goal_id>/pay", methods=['POST'])
+def pay_ammount_route(user_id, goal_id):
+    return pay_ammount(user_id, goal_id)
 
 #---------------------------------------------------------------------------------------------
 

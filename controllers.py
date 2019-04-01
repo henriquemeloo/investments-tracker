@@ -4,6 +4,7 @@ import json
 from bson import ObjectId
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
+import pandas as pd
 
 #client = MongoClient('mongodb://db:27017/')
 client = MongoClient('mongodb://localhost:27017/')
@@ -15,17 +16,15 @@ class JSONEncoder(json.JSONEncoder):
             return str(o)
         return json.JSONEncoder.default(self, o)
 
+def diff_month(d1, d2):
+    return (d1.year - d2.year) * 12 + d1.month - d2.month
+
+def str_to_date(str_date): #must be in format YYYY-MM-DD
+	str_date = str_date.split('-')
+	return datetime.date(int(str_date[0]), int(str_date[1]), int(str_date[2]))
 
 def hello():
 	return "Hello World!"
-
-def add_months(source_date, months):
-    month = source_date.month - 1 + months
-    year = source_date.year + month // 12
-    month = month % 12 + 1
-    day = min(source_date.day,calendar.monthrange(year,month)[1])
-    
-    return datetime.date(year, month, day)
 
 #def users():
 
@@ -37,48 +36,71 @@ def goals(user_id):
 	elif request.method == 'POST':
 		try:
 			name = request.form["name"]
-			price = request.form["price"]
-			end_date = str(request.form["end_date"]) #ESPERADA DATA NO FORMATO MM-YYYY
-			month = int(end_date.rpartition('-')[0])
-			year = int(end_date.rpartition('-')[2])
-			end_date = datetime.date(year, month, 1)
-			start_date = str(request.form["start_date"])
-			month = int(start_date.rpartition('-')[0])
-			year = int(start_date.rpartition('-')[2])
-			start_date = datetime.date(year, month, 1)
-
 
 			for goal in db.goals.find():
 				if goal.get("name") == name:
-					return JSONEncoder().encode({"status": "failed", "payload": "Ja existe objetivo de mesmo nome"})
+					return JSONEncoder().encode({
+						"status": "failed",
+						"payload": "Ja existe objetivo de mesmo nome"
+						})
 
-			num_months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
-			installments_ids = []
-			for i in range(num_months):
-				value = float(price)/num_months 
-				date = add_months(start_date, i)
-				installment_id = db.installments.insert_one({'user_id': user_id,'value': value, 'paid': "False", 'date': str(date), 'investment_id': "None"}).inserted_id
-				installments_ids.append(installment_id)
-
-			goal_id = db.goals.insert_one({'user_id': user_id, 'name': name, 'price': price, 'end_date': str(end_date), 'start_date': str(start_date), 'installments': installments_ids}).inserted_id
+			goal_id = db.goals.insert_one({
+				'user_id': user_id,
+				'name': name,
+				'price': float(request.form["price"]),
+				'end_date': request.form["end_date"], #must be in format YYYY-MM-DD
+				'start_date': request.form["start_date"], #must be in format YYYY-MM-DD
+				'ammount_saved': float(request.form["ammount_saved"]),
+				'last_paid': request.form["last_paid"] #must be in format YYYY-MM-DD
+				}).inserted_id
 			return jsonify({"status": "success", "payload": str(goal_id)})
 
-		except Exception as e:
+		except Exception:
 			return jsonify({"status": "failed", "payload": "Error"})
 
 def goal(user_id, goal_id):
 	goal = db.goals.find_one({'_id': ObjectId(goal_id)})
 	return JSONEncoder().encode({"status": "success", "payload": goal})
 
-def installment(installment_id):
-	installment = db.installments.find_one({'_id': ObjectId(installment_id)})
-	return JSONEncoder().encode({"status": "success", "payload": installment})
 
-def pay_installment(installment_id):
-	paid = request.form["paid"]
-	if(paid == "True" or paid == "False"):
-		db.installments.update({'_id': ObjectId(installment_id)}, { '$set': {'paid': paid}})
-		installment = db.installments.find_one({'_id': ObjectId(installment_id)})
-		return JSONEncoder().encode({"status": "success", "payload": installment})
-	else:
-		return JSONEncoder().encode({"status": "failed", "payload": "'paid' argument must be 'True' or 'False'"})
+def get_pending_installments(user_id):
+	cursor = db.goals.find()
+	goals = pd.DataFrame(list(cursor))
+	goals['last_paid'] = goals.apply(lambda row : str_to_date(row['last_paid']), axis=1)
+	goals['end_date'] = goals.apply(lambda row : str_to_date(row['end_date']), axis=1)
+	pending_installments = goals.loc[goals['last_paid'] < datetime.datetime.now().date()].copy()
+	if pending_installments.empty:
+		return JSONEncoder().encode({"status": "success", "payload": None})
+	pending_installments['months_delta'] = pending_installments.apply(lambda row : diff_month(row['end_date'], datetime.datetime.now().date()), axis=1)
+	pending_installments['monthly_ammount'] = pending_installments.apply(lambda row : row['price'] / row['months_delta'], axis=1)
+	pending_installments['last_paid'] = pending_installments.apply(lambda row : str(row['last_paid']), axis=1)
+	pending_installments['end_date'] = pending_installments.apply(lambda row : str(row['end_date']), axis=1)
+
+	return JSONEncoder().encode({"status": "success", "payload": pending_installments.drop(columns=['_id']).to_json()})
+
+def update_goal(user_id, goal_id, name=None, price=None, end_date=None, ammount_saved=None, last_paid=None):
+	update_value = {
+		'name': name,
+		'price': price,
+		'end_date': end_date,
+		'ammount_saved': ammount_saved,
+		'last_paid': last_paid
+		}
+	filtered = {k: v for k, v in update_value.items() if v is not None}
+	update_value.clear()
+	update_value.update(filtered)
+
+	db.goals.update_one(
+		filter={'_id':ObjectId(goal_id)},
+		update={"$set":update_value},
+		upsert=False
+		)
+
+	return JSONEncoder().encode({"status": "success", "payload": db.goals.find_one({'_id':ObjectId(goal_id)})})
+
+def pay_ammount(user_id, goal_id):
+	ammount = float(request.form["ammount"])
+	ammount_saved = float(db.goals.find_one({'_id':ObjectId(goal_id)})['ammount_saved'])
+	last_paid = datetime.datetime.now().date().strftime(format="%Y-%m-%d")
+	
+	return update_goal(user_id, goal_id, ammount_saved=ammount_saved+ammount, last_paid=last_paid)
