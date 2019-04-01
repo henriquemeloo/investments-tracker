@@ -87,29 +87,61 @@ def get_pending_installments(user_id):
 
 	return JSONEncoder().encode({"status": "success", "payload": pending_installments.drop(columns=['_id']).to_dict()})
 
-def update_goal(user_id, goal_id, name=None, price=None, end_date=None, ammount_saved=None, last_paid=None):
+def update_goal(user_id, goal_id):
+	name = None
+	price = None
+	end_date = None
+	ammount_saved = None
+	last_paid = None
+	
+	if "name" in request.form:
+		name = request.form["name"]
+	if "price" in request.form:
+		price = request.form["price"]
+	if "end_date" in request.form:
+		end_date = request.form["end_date"]
+	if "ammount_saved" in request.form:
+		ammount_saved = request.form["ammount_saved"]
+	if "last_paid" in request.form:
+		last_paid = request.form["last_paid"]
+
 	update_value = {
-		'name': name,
-		'price': price,
-		'end_date': end_date,
-		'ammount_saved': ammount_saved,
-		'last_paid': last_paid
-		}
+		'name' : name,
+		'price' : price,
+		'end_date' : end_date,
+		'ammount_saved' : ammount_saved,
+		'last_paid' : last_paid
+	}
+
+	return post_goal_update(user_id, goal_id, update_value)
+
+def post_goal_update(user_id, goal_id, update_value):
 	filtered = {k: v for k, v in update_value.items() if v is not None}
 	update_value.clear()
 	update_value.update(filtered)
 
-	db.goals.update_one(
+	update_result = db.goals.update_one(
 		filter={'_id':ObjectId(goal_id)},
 		update={"$set":update_value},
 		upsert=False
 		)
 
-	return JSONEncoder().encode({"status": "success", "payload": db.goals.find_one({'_id':ObjectId(goal_id)})})
+	if (update_result.modified_count == 1):
+		return JSONEncoder().encode({"status": "success", "payload": db.goals.find_one({'_id':ObjectId(goal_id)})})
+	else:
+		return JSONEncoder().encode({
+			"status": "failed",
+			"payload": "Could not update goal with id {goal_id}".format(goal_id=goal_id)
+			})
 
 def pay_ammount(user_id, goal_id):
 	ammount = float(request.form["ammount"])
 	ammount_saved = float(db.goals.find_one({'_id':ObjectId(goal_id)})['ammount_saved'])
 	last_paid = datetime.datetime.now().date().strftime(format="%Y-%m-%d")
+
+	update_value = {
+		'ammount_saved' : ammount_saved + ammount,
+		'last_paid' : last_paid
+	}
 	
-	return update_goal(user_id, goal_id, ammount_saved=ammount_saved+ammount, last_paid=last_paid)
+	return post_goal_update(user_id, goal_id, update_value)

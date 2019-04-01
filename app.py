@@ -36,6 +36,10 @@ def goal_route(user_id, goal_id):
 def pending_installments_route(user_id):
     return get_pending_installments(user_id)
 
+@app.route("/<user_id>/goals/<goal_id>/update/", methods=['POST'])
+def update_goal_route(user_id, goal_id):
+    return update_goal(user_id, goal_id)
+
 @app.route("/<user_id>/goals/<goal_id>/pay/", methods=['POST'])
 def pay_ammount_route(user_id, goal_id):
     return pay_ammount(user_id, goal_id)
