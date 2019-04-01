@@ -26,8 +26,17 @@ def str_to_date(str_date): #must be in format YYYY-MM-DD
 def hello():
 	return "Hello World!"
 
-#def users():
-
+def users():
+	if request.method == 'GET':
+		users = db.users.find()
+		return JSONEncoder().encode({"status": "success", "payload": [user for user in users]})
+	elif request.method == 'POST':
+		try:
+			name = request.form["name"]
+			user_id = db.users.insert_one({'name': name}).inserted_id
+			return JSONEncoder().encode({"status": "success", "payload": str(user_id)})
+		except Exception:
+			return JSONEncoder().encode({"status": "failed", "payload": "Favor colocar um nome"})
 
 def goals(user_id):
 	if request.method == 'GET':
@@ -53,10 +62,10 @@ def goals(user_id):
 				'ammount_saved': float(request.form["ammount_saved"]),
 				'last_paid': request.form["last_paid"] #must be in format YYYY-MM-DD
 				}).inserted_id
-			return jsonify({"status": "success", "payload": str(goal_id)})
+			return JSONEncoder().encode({"status": "success", "payload": str(goal_id)})
 
 		except Exception:
-			return jsonify({"status": "failed", "payload": "Error"})
+			return JSONEncoder().encode({"status": "failed", "payload": "Error"})
 
 def goal(user_id, goal_id):
 	goal = db.goals.find_one({'_id': ObjectId(goal_id)})
@@ -76,7 +85,7 @@ def get_pending_installments(user_id):
 	pending_installments['last_paid'] = pending_installments.apply(lambda row : str(row['last_paid']), axis=1)
 	pending_installments['end_date'] = pending_installments.apply(lambda row : str(row['end_date']), axis=1)
 
-	return JSONEncoder().encode({"status": "success", "payload": pending_installments.drop(columns=['_id']).to_json()})
+	return JSONEncoder().encode({"status": "success", "payload": pending_installments.drop(columns=['_id']).to_dict()})
 
 def update_goal(user_id, goal_id, name=None, price=None, end_date=None, ammount_saved=None, last_paid=None):
 	update_value = {
