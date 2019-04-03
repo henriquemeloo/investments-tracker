@@ -1,7 +1,7 @@
 import sys
 import json
 from bson import ObjectId
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 from controllers import *
 app = Flask(__name__)
@@ -12,8 +12,9 @@ db = client.test_database
 
 
 @app.route("/")
-def hello_route():
-    return hello()
+def index_route():
+    return render_template('index.html')
+    #return hello()
 
 @app.route("/users/", methods=['GET', 'POST'])
 def users_route():
@@ -43,6 +44,10 @@ def update_goal_route(user_id, goal_id):
 @app.route("/<user_id>/goals/<goal_id>/pay/", methods=['POST'])
 def pay_ammount_route(user_id, goal_id):
     return pay_ammount(user_id, goal_id)
+
+@app.route("/show_sign_up/")
+def sign_up_route():
+    return render_template('signup.html')
 
 
 if __name__ == "__main__":

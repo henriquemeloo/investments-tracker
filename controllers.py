@@ -5,6 +5,7 @@ from bson import ObjectId
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 import pandas as pd
+from werkzeug.security import generate_password_hash, check_password_hash
 
 #client = MongoClient('mongodb://db:27017/')
 client = MongoClient('mongodb://localhost:27017/')
@@ -32,11 +33,19 @@ def users():
 		return JSONEncoder().encode({"status": "success", "payload": [user for user in users]})
 	elif request.method == 'POST':
 		try:
-			name = request.form["name"]
-			user_id = db.users.insert_one({'name': name}).inserted_id
+			name = request.form['name']
+			email = request.form['email']
+			if (db.users.count_documents({'email':email}) > 0):
+				raise Exception('Already an account with that email.') 
+			password_hash = generate_password_hash(request.form['password'])
+			user_id = db.users.insert_one({
+				'name': name,
+				'email': email,
+				'password': password_hash
+				}).inserted_id
 			return JSONEncoder().encode({"status": "success", "payload": str(user_id)})
-		except Exception:
-			return JSONEncoder().encode({"status": "failed", "payload": "Favor colocar um nome"})
+		except Exception as e:
+			return JSONEncoder().encode({"status": "failed", "payload": str(e)})
 
 def goals(user_id):
 	if request.method == 'GET':
